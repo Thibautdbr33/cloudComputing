@@ -1,33 +1,51 @@
-name: Deploy Terraform Environments
+name: Terraform Deploy (SPN)
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment to deploy?"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
 
 jobs:
   terraform:
-    name: Apply Terraform
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        env: [dev, prod]
+    environment: ${{ github.event.inputs.environment }}
+
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Terraform
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.7.5
+          terraform_version: 1.6.6
 
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Plan for ${{ matrix.env }}
-        run: terraform plan -var-file="env/${{ matrix.env }}/terraform.tfvars"
+      - name: Terraform Plan
+        run: terraform plan -var-file="env/${{ github.event.inputs.environment }}/terraform.tfvars" -out=tfplan.binary
 
-      - name: Terraform Apply for ${{ matrix.env }}
-        run: terraform apply -auto-approve -var-file="env/${{ matrix.env }}/terraform.tfvars"
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan.binary
