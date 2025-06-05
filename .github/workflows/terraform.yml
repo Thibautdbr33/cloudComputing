@@ -31,7 +31,7 @@ jobs:
       - name: Azure Login via SPN
         uses: azure/login@v1
         with:
-          creds: >-
+          creds: >
             {
               "clientId": "${{ secrets.AZURE_CLIENT_ID }}",
               "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET }}",
