@@ -1,0 +1,8 @@
+# Ignore les fichiers Terraform sensibles ou inutiles
+.terraform/
+*.tfstate
+*.tfstate.*
+*.backup
+*.log
+*.exe
+.terraform.lock.hcl
