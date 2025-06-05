@@ -6,12 +6,6 @@ terraform {
     }
   }
 
-  backend "azurerm" {
-    resource_group_name  = "rg-iac-dev"
-    storage_account_name = "iacstorage974"             
-    container_name       = "tfstate"                    
-    key                  = "vm_deploy.tfstate"  # Ce nom peut rester fixe, ou être "vm_deploy-${var.env}.tfstate" si tu veux isoler les états
-  }
 }
 
 provider "azurerm" {
