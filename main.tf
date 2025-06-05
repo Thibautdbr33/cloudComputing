@@ -9,7 +9,7 @@ terraform {
   backend "azurerm" {
     storage_account_name = "iacstorage974"             
     container_name       = "tfstate"                    
-    key                  = "vm_deploy.tfstate"          
+    key                  = "vm_deploy.tfstate"  # Ce nom peut rester fixe, ou être "vm_deploy-${var.env}.tfstate" si tu veux isoler les états
   }
 }
 
@@ -20,33 +20,33 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "my_resource_group" {
-  name     = "rg-iac-thibaut"
+  name     = "rg-iac-${var.env}"
   location = "francecentral"
 }
 
 resource "azurerm_virtual_network" "my_vnet" {
-  name                = "vnet-iac-thibaut"
+  name                = "vnet-iac-${var.env}"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.my_resource_group.location
   resource_group_name = azurerm_resource_group.my_resource_group.name
 }
 
 resource "azurerm_subnet" "my_subnet" {
-  name                 = "subnet-iac-thibaut"
+  name                 = "subnet-iac-${var.env}"
   resource_group_name  = azurerm_resource_group.my_resource_group.name
   virtual_network_name = azurerm_virtual_network.my_vnet.name
   address_prefixes     = ["10.0.1.0/24"]
 }
 
 resource "azurerm_virtual_machine" "my_vm" {
-  name                  = "vm-iac-thibaut"
+  name                  = "vm-iac-${var.env}"
   resource_group_name   = azurerm_resource_group.my_resource_group.name
   location              = azurerm_resource_group.my_resource_group.location
   availability_set_id   = azurerm_availability_set.my_availability_set.id
   network_interface_ids = [azurerm_network_interface.my_nic.id]
 
-  vm_size                         = "Standard_B1s"
-  delete_os_disk_on_termination  = true
+  vm_size                        = "Standard_B1s"
+  delete_os_disk_on_termination = true
 
   storage_image_reference {
     publisher = "Canonical"
@@ -56,14 +56,14 @@ resource "azurerm_virtual_machine" "my_vm" {
   }
 
   storage_os_disk {
-    name              = "vm-iac-thibaut-OsDisk"
+    name              = "vm-iac-${var.env}-OsDisk"
     caching           = "ReadWrite"
     create_option     = "FromImage"
     managed_disk_type = "Premium_LRS"
   }
 
   os_profile {
-    computer_name  = "vm-iac-thibaut"
+    computer_name  = "vm-iac-${var.env}"
     admin_username = "adminuser"
     admin_password = "Password1234!"
   }
@@ -74,19 +74,19 @@ resource "azurerm_virtual_machine" "my_vm" {
 }
 
 resource "azurerm_availability_set" "my_availability_set" {
-  name                = "avset-iac-thibaut"
+  name                = "avset-iac-${var.env}"
   resource_group_name = azurerm_resource_group.my_resource_group.name
   location            = azurerm_resource_group.my_resource_group.location
 }
 
 resource "azurerm_network_interface" "my_nic" {
-  name                = "nic-iac-thibaut"
+  name                = "nic-iac-${var.env}"
   location            = azurerm_resource_group.my_resource_group.location
   resource_group_name = azurerm_resource_group.my_resource_group.name
-  depends_on = [azurerm_subnet.my_subnet]
+  depends_on          = [azurerm_subnet.my_subnet]
 
   ip_configuration {
-    name                          = "nicconf-iac-thibaut"
+    name                          = "nicconf-iac-${var.env}"
     subnet_id                     = azurerm_subnet.my_subnet.id
     private_ip_address_allocation = "Dynamic"
   }
